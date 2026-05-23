@@ -2,6 +2,8 @@
 
 ## Ekip Bilgileri
 
+| Ad Soyad | Öğrenci No |
+|---|---|
 | Armağan TOPAL | 222802085 |
 
 
