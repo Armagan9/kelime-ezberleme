@@ -19,10 +19,10 @@ export default function Dashboard() {
         <p className="page-subtitle">6 Sefer Kelime Ezberleme Sistemi</p>
       </div>
 
-      {progress && (
+      {progress && quizStats && (
         <div className="stats-grid">
           <div className="stat-card stat-gray">
-            <div className="stat-value">{progress.total}</div>
+            <div className="stat-value">{quizStats.totalWordsInSystem}</div>
             <div className="stat-label">Toplam Kelime</div>
           </div>
           <div className="stat-card stat-primary">
@@ -55,8 +55,8 @@ export default function Dashboard() {
             <div className="stat-label">Toplam Cevap</div>
           </div>
           <div className="stat-card">
-            <div className="stat-value" style={{ color: 'var(--success)' }}>{quizStats.totalWordsInSystem}</div>
-            <div className="stat-label">Sistemdeki Kelime</div>
+            <div className="stat-value" style={{ color: 'var(--warning)' }}>{progress.total}</div>
+            <div className="stat-label">Kuyruktaki</div>
           </div>
         </div>
       )}
@@ -76,11 +76,6 @@ export default function Dashboard() {
           <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>🟩</div>
           <h3 style={{ fontWeight: 700, marginBottom: '0.25rem' }}>Wordle</h3>
           <p className="text-muted">Kelime bulmaca oyunu</p>
-        </Link>
-        <Link to="/wordchain" className="card" style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer', border: '2px solid var(--primary-light)' }}>
-          <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>🔗</div>
-          <h3 style={{ fontWeight: 700, marginBottom: '0.25rem' }}>Word Chain</h3>
-          <p className="text-muted">AI ile hikaye oluştur</p>
         </Link>
         <Link to="/reports" className="card" style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer', border: '2px solid var(--primary-light)' }}>
           <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>📊</div>

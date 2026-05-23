@@ -1,7 +1,7 @@
 const express = require('express');
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
+const path = require('node:path');
+const fs = require('node:fs');
 const db = require('../config/db');
 const auth = require('../middleware/auth');
 
@@ -108,7 +108,19 @@ router.delete('/:id', auth, (req, res) => {
     if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
   }
 
-  db.prepare('DELETE FROM Words WHERE WordID = ?').run(req.params.id);
+  // Kelimeye bağlı çocuk kayıtları önce sil, yoksa FK kısıtı silmeyi engeller
+  db.exec('BEGIN');
+  try {
+    db.prepare('DELETE FROM QuizHistory WHERE WordID = ?').run(req.params.id);
+    db.prepare('DELETE FROM UserWordProgress WHERE WordID = ?').run(req.params.id);
+    db.prepare('DELETE FROM WordSamples WHERE WordID = ?').run(req.params.id);
+    db.prepare('DELETE FROM Words WHERE WordID = ?').run(req.params.id);
+    db.exec('COMMIT');
+  } catch (e) {
+    db.exec('ROLLBACK');
+    throw e;
+  }
+
   res.json({ message: 'Kelime silindi' });
 });
 

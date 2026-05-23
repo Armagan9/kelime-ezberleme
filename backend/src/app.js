@@ -1,9 +1,10 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const path = require('path');
+const path = require('node:path');
 
 const app = express();
+app.disable('x-powered-by'); // Express sürüm bilgisini gizle
 
 app.use(cors());
 app.use(express.json());

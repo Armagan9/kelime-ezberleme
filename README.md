@@ -6,8 +6,10 @@ Aralıklı tekrar (spaced repetition) yöntemiyle İngilizce kelime öğrenme uy
 
 - **Backend:** Node.js, Express.js, SQLite (`node:sqlite` — Node.js 22+ built-in)
 - **Frontend:** React 18, Vite, React Router v6
-- **Auth:** JWT (JSON Web Token), bcryptjs
-- **LLM:** Claude API (Anthropic) — Word Chain hikayesi için
+- **Auth:** JWT (JSON Web Token), bcryptjs, e-posta doğrulama (6 haneli kod)
+- **LLM:** Google Gemini — Word Chain hikayesi için
+- **Görsel Üretimi:** Pollinations (AI) — Word Chain görseli için
+- **E-posta:** Nodemailer (Gmail SMTP) — doğrulama ve şifre sıfırlama
 - **Dosya Yükleme:** Multer
 
 ## Özellikler (User Stories)
@@ -20,7 +22,7 @@ Aralıklı tekrar (spaced repetition) yöntemiyle İngilizce kelime öğrenme uy
 | Story 4 | Ayarlar — günlük yeni kelime sayısını değiştir | 5 |
 | Story 5 | Analiz Raporu + yazdırma | 5 |
 | Story 6 | Wordle bulmaca oyunu | 15 |
-| Story 7 | Word Chain — Claude AI ile hikaye oluştur | 5 |
+| Story 7 | Word Chain — Gemini ile hikaye + AI görsel oluştur ve kaydet | 5 |
 
 ## Kurulum
 
@@ -34,7 +36,10 @@ Aralıklı tekrar (spaced repetition) yöntemiyle İngilizce kelime öğrenme uy
 cd backend
 npm install
 cp .env.example .env
-# .env dosyasını düzenle (JWT_SECRET ve ANTHROPIC_API_KEY)
+# .env dosyasını düzenle:
+#   JWT_SECRET     — rastgele gizli anahtar
+#   GEMINI_API_KEY — Word Chain için (aistudio.google.com/apikey)
+#   EMAIL_USER / EMAIL_PASS — e-posta için (Gmail App Password) [opsiyonel]
 npm run dev
 ```
 
@@ -75,10 +80,12 @@ Aktif Öğrenme → 6 ÜST ÜSTE DOĞRU CEVAP → Tekrar Moduna Geç
 ## API Endpointleri
 
 ```
-POST /api/auth/register     — Kayıt
-POST /api/auth/login        — Giriş
-POST /api/auth/forgot-password — Şifre sıfırlama token'ı
-POST /api/auth/reset-password  — Şifreyi güncelle
+POST /api/auth/register             — Kayıt (e-posta doğrulama kodu gönderir)
+POST /api/auth/verify-email         — E-posta doğrulama kodunu onayla
+POST /api/auth/resend-verification  — Doğrulama kodunu tekrar gönder
+POST /api/auth/login                — Giriş
+POST /api/auth/forgot-password      — Şifre sıfırlama token'ı (e-posta ile)
+POST /api/auth/reset-password       — Şifreyi güncelle
 
 GET  /api/words             — Tüm kelimeler
 POST /api/words             — Kelime ekle (multipart/form-data)
@@ -100,7 +107,7 @@ POST /api/wordle/start      — Wordle oyunu başlat
 POST /api/wordle/guess      — Tahmin gönder
 GET  /api/wordle/status     — Oyun durumu
 
-POST /api/wordchain/generate  — Claude ile hikaye oluştur
+POST /api/wordchain/generate  — Gemini ile hikaye + AI görsel oluştur
 GET  /api/wordchain/stories   — Kayıtlı hikayeler
 DELETE /api/wordchain/stories/:id — Hikaye sil
 ```
@@ -108,13 +115,13 @@ DELETE /api/wordchain/stories/:id — Hikaye sil
 ## Veritabanı Şeması
 
 ```
-Users          → UserID, UserName, Email, Password, ResetToken
-Words          → WordID, EngWordName, TurWordName, Picture, CreatedBy
+Users          → UserID, UserName, Email, Password, ResetToken, EmailVerified, VerifyCode
+Words          → WordID, EngWordName, TurWordName, Picture, AudioPath, CreatedBy
 WordSamples    → WordSamplesID, WordID, Sample
 UserSettings   → SettingsID, UserID, DailyNewWords
 UserWordProgress → UserID, WordID, Status, ConsecutiveCorrect, ReviewLevel, NextReviewDate
 QuizHistory    → HistoryID, UserID, WordID, IsCorrect, QuizDate
-WordChainStories → StoryID, UserID, Words, Story, ImageDescription
+WordChainStories → StoryID, UserID, Words, Story, ImageDescription, ImagePath
 ```
 
 ## İster Gerçekleştirme Beyanı
@@ -129,7 +136,24 @@ WordChainStories → StoryID, UserID, Words, Story, ImageDescription
 | Bulmaca (Wordle) Modülü | ✅ Evet |
 | Word Chain (LLM) Modülü | ✅ Evet |
 
+## Code Smells / KISS için Yapılanlar
+
+Projenin kod kalitesini artırmak için yapılan düzeltmeler:
+
+### Code Smells (SonarQube)
+- **`node:` öneki:** Tüm yerleşik modüller `node:fs`, `node:path`, `node:crypto` olarak import edildi (kural S7772).
+- **Sürüm sızıntısı:** Express'in sürüm bilgisini açığa çıkaran başlık kapatıldı — `app.disable('x-powered-by')` (kural S5689).
+- **Ölü kod:** Quiz bileşeninde hiç okunmayan `feedback` state'i kaldırıldı.
+- **Kararlı React key:** Liste render'ında index yerine kararlı `key={opt.id}` kullanıldı (kural S6479).
+- **Kullanılmayan bağımlılık:** `@anthropic-ai/sdk` paketi (Gemini'ye geçince gereksiz kaldı) kaldırıldı.
+
+### KISS (Keep It Simple)
+- **Katmanlı sade mimari:** `routes/` (HTTP uçları) · `services/` (iş mantığı: spaced-repetition, mail) · `config/` (veritabanı).
+- **Küçük, tek sorumluluklu fonksiyonlar:** `processAnswer`, `getDailyQuizWords`, `generateStory`, `sendResetEmail`.
+- **Gereksiz soyutlama yok:** Sade Express + `node:sqlite`, fazladan ORM/katman yok.
+- **Tek bir kaynaktan akış:** Frontend tek `api/client.js` üzerinden konuşur; token yönetimi tek yerde (interceptor).
+
 ## Geliştirici
 
-- **Ad Soyad:** Armağan Topal
-- **E-posta:** armagantopaltc@gmail.com
+- Ad Soyad : Armağan Topal
+- NO: 222802085

@@ -1,7 +1,7 @@
 // Node.js 22.5+ built-in SQLite — no native compilation needed
 const { DatabaseSync } = require('node:sqlite');
-const path = require('path');
-const fs = require('fs');
+const path = require('node:path');
+const fs = require('node:fs');
 
 const DB_PATH = path.join(__dirname, '../../data/kelime.db');
 const dataDir = path.dirname(DB_PATH);
@@ -19,6 +19,9 @@ db.exec(`
     Password TEXT NOT NULL,
     ResetToken TEXT,
     ResetTokenExpiry INTEGER,
+    EmailVerified INTEGER DEFAULT 0,
+    VerifyCode TEXT,
+    VerifyCodeExpiry INTEGER,
     CreatedAt INTEGER DEFAULT (unixepoch())
   );
 
@@ -58,8 +61,8 @@ db.exec(`
     LastReviewedDate TEXT,
     AddedDate TEXT DEFAULT (date('now')),
     UNIQUE(UserID, WordID),
-    FOREIGN KEY (UserID) REFERENCES Users(UserID),
-    FOREIGN KEY (WordID) REFERENCES Words(WordID)
+    FOREIGN KEY (UserID) REFERENCES Users(UserID) ON DELETE CASCADE,
+    FOREIGN KEY (WordID) REFERENCES Words(WordID) ON DELETE CASCADE
   );
 
   CREATE TABLE IF NOT EXISTS QuizHistory (
@@ -69,8 +72,8 @@ db.exec(`
     IsCorrect INTEGER NOT NULL,
     QuizDate TEXT DEFAULT (date('now')),
     QuizDateTime INTEGER DEFAULT (unixepoch()),
-    FOREIGN KEY (UserID) REFERENCES Users(UserID),
-    FOREIGN KEY (WordID) REFERENCES Words(WordID)
+    FOREIGN KEY (UserID) REFERENCES Users(UserID) ON DELETE CASCADE,
+    FOREIGN KEY (WordID) REFERENCES Words(WordID) ON DELETE CASCADE
   );
 
   CREATE TABLE IF NOT EXISTS WordChainStories (
@@ -80,9 +83,26 @@ db.exec(`
     Words TEXT NOT NULL,
     Story TEXT NOT NULL,
     ImageDescription TEXT,
+    ImagePath TEXT,
     CreatedAt INTEGER DEFAULT (unixepoch()),
     FOREIGN KEY (UserID) REFERENCES Users(UserID)
   );
 `);
+
+// Migration: var olan veritabanlarında WordChainStories.ImagePath kolonunu ekle
+const wcCols = db.prepare('PRAGMA table_info(WordChainStories)').all();
+if (!wcCols.some(c => c.name === 'ImagePath')) {
+  db.exec('ALTER TABLE WordChainStories ADD COLUMN ImagePath TEXT');
+}
+
+// Migration: var olan veritabanlarına e-posta doğrulama kolonlarını ekle
+const userCols = db.prepare('PRAGMA table_info(Users)').all();
+if (!userCols.some(c => c.name === 'EmailVerified')) {
+  db.exec('ALTER TABLE Users ADD COLUMN EmailVerified INTEGER DEFAULT 0');
+  db.exec('ALTER TABLE Users ADD COLUMN VerifyCode TEXT');
+  db.exec('ALTER TABLE Users ADD COLUMN VerifyCodeExpiry INTEGER');
+  // Bu kolonlar eklenmeden önce kayıt olmuş kullanıcılar doğrulanmış sayılır
+  db.exec('UPDATE Users SET EmailVerified = 1');
+}
 
 module.exports = db;

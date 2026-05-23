@@ -28,7 +28,7 @@ export default function Navbar() {
             Wordle
           </NavLink>
           <NavLink to="/wordchain" className={({ isActive }) => 'nav-link' + (isActive ? ' active' : '')}>
-            Hikaye
+            Word Chain
           </NavLink>
           <NavLink to="/reports" className={({ isActive }) => 'nav-link' + (isActive ? ' active' : '')}>
             Rapor

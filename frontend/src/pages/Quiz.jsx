@@ -8,7 +8,6 @@ export default function Quiz() {
   const [questions, setQuestions] = useState([]);
   const [current, setCurrent] = useState(0);
   const [selected, setSelected] = useState(null);
-  const [, setFeedback] = useState(null);
   const [score, setScore] = useState({ correct: 0, wrong: 0 });
   const [done, setDone] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -33,8 +32,6 @@ export default function Quiz() {
       setScore(s => ({ ...s, wrong: s.wrong + 1 }));
     }
 
-    setFeedback(isCorrect ? 'correct' : 'wrong');
-
     await api.post('/quiz/answer', { wordId: q.wordId, isCorrect });
 
     setTimeout(() => {
@@ -43,7 +40,6 @@ export default function Quiz() {
       } else {
         setCurrent(c => c + 1);
         setSelected(null);
-        setFeedback(null);
       }
     }, 1000);
   }
@@ -130,7 +126,7 @@ export default function Quiz() {
               else if (opt.id === selected && !opt.isCorrect) cls += ' wrong';
             }
             return (
-              <button key={i} className={cls} onClick={() => handleAnswer(opt)} disabled={selected !== null}>
+              <button key={opt.id} className={cls} onClick={() => handleAnswer(opt)} disabled={selected !== null}>
                 {opt.text}
               </button>
             );

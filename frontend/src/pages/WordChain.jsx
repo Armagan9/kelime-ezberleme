@@ -137,6 +137,13 @@ export default function WordChain() {
             {story && (
               <div className="card">
                 <h2 className="card-title">📖 Oluşturulan Hikaye</h2>
+                {story.imagePath && (
+                  <img
+                    src={story.imagePath}
+                    alt="Hikaye görseli"
+                    style={{ width: '100%', borderRadius: 8, marginBottom: '0.75rem' }}
+                  />
+                )}
                 <div className="story-card">
                   <p className="story-text">
                     {highlightWords(story.story, story.words)}
@@ -178,6 +185,13 @@ export default function WordChain() {
                       <button className="btn btn-sm btn-danger" onClick={() => deleteStory(s.StoryID)}>Sil</button>
                     </div>
                   </div>
+                  {s.ImagePath && (
+                    <img
+                      src={s.ImagePath}
+                      alt="Hikaye görseli"
+                      style={{ width: '100%', maxWidth: 400, borderRadius: 8, marginBottom: '0.75rem' }}
+                    />
+                  )}
                   <div className="story-card">
                     <p className="story-text">
                       {highlightWords(s.Story, s.Words.split(', '))}
